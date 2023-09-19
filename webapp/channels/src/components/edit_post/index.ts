@@ -60,6 +60,7 @@ function mapStateToProps(state: GlobalState) {
         useChannelMentions,
         isRHSOpened: getIsRhsOpen(state),
         isEditHistoryShowing: getRhsState(state) === RHSStates.EDIT_HISTORY,
+        currentUserId,
     };
 }
 

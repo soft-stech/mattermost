@@ -7,16 +7,19 @@ import {useIntl} from 'react-intl';
 
 import {EmoticonPlusOutlineIcon} from '@mattermost/compass-icons/components';
 import type {Emoji, SystemEmoji} from '@mattermost/types/emojis';
+import type {ServerError} from '@mattermost/types/errors';
 import type {Post} from '@mattermost/types/posts';
 
 import type {ActionResult} from 'mattermost-redux/types/actions';
 
+import AdvancedTextEditor from 'components/advanced_text_editor/advanced_text_editor';
 import DeletePostModal from 'components/delete_post_modal';
 import EmojiPickerOverlay from 'components/emoji_picker/emoji_picker_overlay';
+import type {FilePreviewInfo} from 'components/file_preview/file_preview';
 import Textbox from 'components/textbox';
 import type {TextboxClass, TextboxElement} from 'components/textbox';
 
-import {AppEvents, Constants, ModalIdentifiers, StoragePrefixes} from 'utils/constants';
+import {AppEvents, Constants, Locations, ModalIdentifiers, StoragePrefixes} from 'utils/constants';
 import * as Keyboard from 'utils/keyboard';
 import {applyMarkdown} from 'utils/markdown/apply_markdown';
 import type {ApplyMarkdownOptions} from 'utils/markdown/apply_markdown';
@@ -34,6 +37,7 @@ import type {ModalData} from 'types/actions';
 import type {PostDraft} from 'types/store/draft';
 
 import EditPostFooter from './edit_post_footer';
+
 
 type DialogProps = {
     post?: Post;
@@ -75,6 +79,7 @@ export type Props = {
     isRHSOpened: boolean;
     isEditHistoryShowing: boolean;
     actions: Actions;
+    currentUserId: string;
 };
 
 export type State = {
@@ -102,6 +107,12 @@ const EditPost = ({editingPost, actions, canEditPost, config, channelId, draft, 
     const [errorClass, setErrorClass] = useState<string>('');
     const [showEmojiPicker, setShowEmojiPicker] = useState<boolean>(false);
     const [renderScrollbar, setRenderScrollbar] = useState<boolean>(false);
+
+    //
+    const [uploadsProgressPercent, setUploadsProgressPercent] = useState<{[clientID: string]: FilePreviewInfo}>({});
+    const [serverError, setServerError] = useState<(ServerError & { submittedMessage?: string }) | null>(null);
+    const [isFormattingBarHidden, setIsFormattingBarHidden] = useState(false);
+    //
 
     const textboxRef = useRef<TextboxClass>(null);
     const emojiButtonRef = useRef<HTMLButtonElement>(null);
@@ -489,7 +500,7 @@ const EditPost = ({editingPost, actions, canEditPost, config, channelId, draft, 
             })}
             ref={wrapperRef}
         >
-            <Textbox
+            {/* <Textbox
                 tabIndex={0}
                 rootId={rootId}
                 onChange={handleChange}
@@ -511,7 +522,55 @@ const EditPost = ({editingPost, actions, canEditPost, config, channelId, draft, 
             />
             <div className='post-body__actions'>
                 {emojiPicker}
-            </div>
+            </div> */}
+            <AdvancedTextEditor
+                location={Locations.RHS_COMMENT}
+                textboxRef={textboxRef}
+                currentUserId={rest.currentUserId}
+                message={editText}
+                showEmojiPicker={showEmojiPicker}
+                uploadsProgressPercent={uploadsProgressPercent}
+                channelId={channelId}
+                postId={rootId}
+                errorClass={errorClass}
+                serverError={serverError}
+                isFormattingBarHidden={isFormattingBarHidden}
+                draft={draft}
+                handleSubmit={this.handleSubmit}
+                removePreview={this.removePreview}
+                setShowPreview={this.setShowPreview}
+                shouldShowPreview={this.props.shouldShowPreview}
+                maxPostSize={this.props.maxPostSize}
+                canPost={this.props.canPost}
+                applyMarkdown={this.applyMarkdown}
+                useChannelMentions={this.props.useChannelMentions}
+                badConnection={this.props.badConnection}
+                canUploadFiles={this.props.canUploadFiles}
+                enableEmojiPicker={this.props.enableEmojiPicker}
+                enableGifPicker={this.props.enableGifPicker}
+                handleBlur={this.handleBlur}
+                postError={this.state.postError}
+                handlePostError={this.handlePostError}
+                emitTypingEvent={this.emitTypingEvent}
+                handleMouseUpKeyUp={this.handleMouseUpKeyUp}
+                handleKeyDown={this.handleKeyDown}
+                postMsgKeyPress={this.commentMsgKeyPress}
+                handleChange={this.handleChange}
+                toggleEmojiPicker={this.toggleEmojiPicker}
+                handleGifClick={this.handleGifClick}
+                handleEmojiClick={this.handleEmojiClick}
+                hideEmojiPicker={this.hideEmojiPicker}
+                toggleAdvanceTextEditor={this.toggleAdvanceTextEditor}
+                handleUploadProgress={this.handleUploadProgress}
+                handleUploadError={this.handleUploadError}
+                handleFileUploadComplete={this.handleFileUploadComplete}
+                handleUploadStart={this.handleUploadStart}
+                handleFileUploadChange={this.handleFileUploadChange}
+                getFileUploadTarget={this.getFileUploadTarget}
+                fileUploadRef={this.fileUploadRef}
+                isThreadView={this.props.isThreadView}
+                additionalControls={pluginItems.filter(Boolean)}
+            />
             <EditPostFooter
                 onSave={handleEdit}
                 onCancel={handleAutomatedRefocusAndExit}
